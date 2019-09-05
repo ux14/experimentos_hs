@@ -72,9 +72,9 @@ pathsWithLength g ini k
 
 -- Morfismo entre dois grafos graph1 -> graph2
 data GraphMorphism = GraphMorphism { src :: Graph
-									,tgt :: Graph
-									,fv  :: Node -> Node
-									,fe  :: Edge -> Edge}
+				    ,tgt :: Graph
+				    ,fv  :: Node -> Node
+				    ,fe  :: Edge -> Edge}
 
 isHomomorphism :: GraphMorphism -> Bool
 isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (commutes ( (fv gm) . target1) (target2 . (fe gm) ) e1)
@@ -119,3 +119,12 @@ genAllAssocList a b = map (genAssocList a) (genAllListsFromSet b)
 
 allFuncs :: [a] -> [b] -> [(a -> Maybe b)]
 allFuncs a b = map assocListToFunc (genAllAssocList a b)
+
+allMorphisms :: Graph -> Graph -> [GraphMorphism]
+allMorphisms g1 g2 = (GraphMorphism g1 g2) <$> (allFuncs n1 n2) <*> (allFuncs e1 e2)
+	where
+	(n1,n2) = (nodes g1, nodes g2)
+	(e1,e2) = (edges g1, edges g2)
+	
+allHomomorphisms :: Graph -> Graph -> [GraphMorphism]
+allHomomorphisms g1 g2 = filter isHomomorphism (allMorphisms g1 g2) 
