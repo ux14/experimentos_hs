@@ -24,3 +24,5 @@ uniqueNum t = fst $ uniqueNumAux (t,0)
 listFromTree :: Tree -> [Int]
 listFromTree EmptyTree = []
 listFromTree tree = (root tree) : (listFromTree $ left tree) ++ (listFromTree $ right tree)
+
+import Control.Monad.State
