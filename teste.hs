@@ -125,9 +125,12 @@ genAssocList = zipWith (\f s -> (f,s))
 genAllAssocList :: [a] -> [b] -> [[(a,b)]]
 genAllAssocList a b = map (genAssocList a) (genAllListsFromSet b)
 
+-- Lista de todas as funções entre dois 'conjuntos' (representados por listas)
+-- Cuidado que passar um valor que não está na primeira lista gera erro.
 allFuncs :: (Eq a) => [a] -> [b] -> [a -> b]
 allFuncs a b = map assocListToFunc (genAllAssocList a b)
 
+-- Lista com todos os morfismos entre dois grafos
 allMorphisms :: Graph -> Graph -> [GraphMorphism]
 allMorphisms g1 g2 = (GraphMorphism g1 g2) <$> (allFuncs n1 n2) <*> (allFuncs e1 e2)
 	where
