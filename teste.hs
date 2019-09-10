@@ -7,6 +7,11 @@ data Graph = Graph { nodes  :: [Node]
 					,source :: Edge -> Node
 					,target :: Edge -> Node}
 
+instance Show Graph where
+	show (Graph n e s t) = let showSrcTgt [] = "";
+							   showSrcTgt (ei:e) = (show ei) ++ " : " ++ (show $ s ei) ++ " -> " ++ (show $ t ei) ++ "\n" ++ (showSrcTgt e);
+						   in show n ++ " " ++ show e ++ "\n" ++ (showSrcTgt e)
+
 -- Constroi a função 'source' de um grafo a partir de sua
 -- Lista de adjacência
 sourceFromAdjList :: [(Edge,Node,Node)] -> (Edge -> Node)
@@ -90,10 +95,10 @@ find _ [] = Nothing
 find f (xi:x) = if (f xi) then (Just xi) else (find f x)
 
 -- Função a partir de uma lista associativa.
-assocListToFunc :: (Eq a) => [(a,b)] -> (a -> Maybe b)
-assocListToFunc l a = let maybePair = find (\p -> fst p == a) l
+assocListToFunc :: (Eq a) => [(a,b)] -> (a -> b)
+assocListToFunc l a = let Just pair = find (\p -> fst p == a) l
 						in 
-						fmap (\p -> snd p) maybePair
+						snd pair
 
 -- Dada uma lista representando um conjunto,
 -- retorna todas as listas feitas de elementos
@@ -117,7 +122,7 @@ genAssocList = zipWith (\f s -> (f,s))
 genAllAssocList :: [a] -> [b] -> [[(a,b)]]
 genAllAssocList a b = map (genAssocList a) (genAllListsFromSet b)
 
-allFuncs :: [a] -> [b] -> [(a -> Maybe b)]
+allFuncs :: (Eq a) => [a] -> [b] -> [a -> b]
 allFuncs a b = map assocListToFunc (genAllAssocList a b)
 
 allMorphisms :: Graph -> Graph -> [GraphMorphism]
@@ -128,3 +133,39 @@ allMorphisms g1 g2 = (GraphMorphism g1 g2) <$> (allFuncs n1 n2) <*> (allFuncs e1
 	
 allHomomorphisms :: Graph -> Graph -> [GraphMorphism]
 allHomomorphisms g1 g2 = filter isHomomorphism (allMorphisms g1 g2) 
+
+src1 :: Edge -> Node
+src1 1 = 2
+src1 2 = 3
+src1 3 = 4
+src1 _ = 0
+
+tgt1 :: Edge -> Node
+tgt1 1 = 1
+tgt1 2 = 2
+tgt1 3 = 3
+tgt1 _ = 0
+
+n1 :: [Node]
+n1 = [1,2,3,4]
+
+e1 :: [Edge]
+e1 = [1,2,3]
+
+src2 :: Edge -> Node
+src2 1 = 1
+src2 2 = 2
+src2 3 = 3
+src2 _ = 0
+
+tgt2 :: Edge -> Node
+tgt2 1 = 3
+tgt2 2 = 4
+tgt2 3 = 1
+tgt2 _ = 0
+
+n2 :: [Node]
+n2 = [1,2,3,4]
+
+e2 :: [Edge]
+e2 = [1,2,3]
