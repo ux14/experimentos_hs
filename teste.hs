@@ -77,9 +77,12 @@ pathsWithLength g ini k
 
 -- Morfismo entre dois grafos graph1 -> graph2
 data GraphMorphism = GraphMorphism { src :: Graph
-				    ,tgt :: Graph
-				    ,fv  :: Node -> Node
-				    ,fe  :: Edge -> Edge}
+				    				,tgt :: Graph
+				    				,fv  :: Node -> Node
+				    				,fe  :: Edge -> Edge}
+
+instance Show GraphMorphism where
+	show (GraphMorphism g1 g2 n e) = (show g1) ++ (show g2) ++ ( show $ zipWith (,) (nodes g1) (map n $ nodes g1) ) ++ "\n" ++ ( show $ zipWith (,) (edges g1) (map e $ edges g1) )
 
 isHomomorphism :: GraphMorphism -> Bool
 isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (commutes ( (fv gm) . target1) (target2 . (fe gm) ) e1)
