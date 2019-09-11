@@ -34,9 +34,7 @@ type TreeState a = (Tree a, Path, Int)
 
 treeFromPath :: Tree a -> Path -> Tree a
 treeFromPath t [] = t
-treeFromPath t (rol:p) = if (rol == R) then (right t) else (left t)
-
-
+treeFromPath t (rol:p) = if (rol == R) then treeFromPath (right t) else treeFromPath (left t)
 
 numeraRaiz :: State (Tree (a,Int), Int) (Tree (a,Int))
 numeraRaiz = state numRaiz

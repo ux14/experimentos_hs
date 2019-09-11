@@ -3,14 +3,14 @@ type Edge  = Int
 type Path = [Edge]
 
 data Graph = Graph { nodes  :: [Node]
-					,edges  :: [Edge]
-					,source :: Edge -> Node
-					,target :: Edge -> Node}
+                    ,edges  :: [Edge]
+                    ,source :: Edge -> Node
+                    ,target :: Edge -> Node}
 
 instance Show Graph where
-	show (Graph n e s t) = let showSrcTgt [] = "";
-							   showSrcTgt (ei:e) = (show ei) ++ " : " ++ (show $ s ei) ++ " -> " ++ (show $ t ei) ++ "\n" ++ (showSrcTgt e);
-						   in show n ++ " " ++ show e ++ "\n" ++ (showSrcTgt e)
+    show (Graph n e s t) = let showSrcTgt [] = "";
+                               showSrcTgt (ei:e) = (show ei) ++ " : " ++ (show $ s ei) ++ " -> " ++ (show $ t ei) ++ "\n" ++ (showSrcTgt e);
+                           in show n ++ " " ++ show e ++ "\n" ++ (showSrcTgt e)
 
 -- Constroi a função 'source' de um grafo a partir de sua
 -- Lista de adjacência
@@ -77,12 +77,12 @@ pathsWithLength g ini k
 
 -- Morfismo entre dois grafos graph1 -> graph2
 data GraphMorphism = GraphMorphism { src :: Graph
-				    				,tgt :: Graph
-				    				,fv  :: Node -> Node
-				    				,fe  :: Edge -> Edge}
+                                    ,tgt :: Graph
+                                    ,fv  :: Node -> Node
+                                    ,fe  :: Edge -> Edge}
 
 instance Show GraphMorphism where
-	show (GraphMorphism g1 g2 n e) = (show g1) ++ (show g2) ++ ( show $ zipWith (,) (nodes g1) (map n $ nodes g1) ) ++ "\n" ++ ( show $ zipWith (,) (edges g1) (map e $ edges g1) )
+    show (GraphMorphism g1 g2 n e) = (show g1) ++ (show g2) ++ ( show $ zipWith (,) (nodes g1) (map n $ nodes g1) ) ++ "\n" ++ ( show $ zipWith (,) (edges g1) (map e $ edges g1) )
 
 isHomomorphism :: GraphMorphism -> Bool
 isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (commutes ( (fv gm) . target1) (target2 . (fe gm) ) e1)
@@ -100,8 +100,8 @@ find f (xi:x) = if (f xi) then (Just xi) else (find f x)
 -- Função a partir de uma lista associativa.
 assocListToFunc :: (Eq a) => [(a,b)] -> (a -> b)
 assocListToFunc l a = let Just pair = find (\p -> fst p == a) l
-						in 
-						snd pair
+                        in 
+                        snd pair
 
 -- Dada uma lista representando um conjunto,
 -- retorna todas as listas feitas de elementos
@@ -133,10 +133,10 @@ allFuncs a b = map assocListToFunc (genAllAssocList a b)
 -- Lista com todos os morfismos entre dois grafos
 allMorphisms :: Graph -> Graph -> [GraphMorphism]
 allMorphisms g1 g2 = (GraphMorphism g1 g2) <$> (allFuncs n1 n2) <*> (allFuncs e1 e2)
-	where
-	(n1,n2) = (nodes g1, nodes g2)
-	(e1,e2) = (edges g1, edges g2)
-	
+    where
+    (n1,n2) = (nodes g1, nodes g2)
+    (e1,e2) = (edges g1, edges g2)
+    
 allHomomorphisms :: Graph -> Graph -> [GraphMorphism]
 allHomomorphisms g1 g2 = filter isHomomorphism (allMorphisms g1 g2) 
 
@@ -158,6 +158,9 @@ n1 = [1,2,3,4]
 e1 :: [Edge]
 e1 = [1,2,3]
 
+g1 :: Graph
+g1 = Graph n1 e1 src1 tgt1
+
 src2 :: Edge -> Node
 src2 1 = 1
 src2 2 = 2
@@ -175,3 +178,46 @@ n2 = [1,2,3,4]
 
 e2 :: [Edge]
 e2 = [1,2,3]
+
+g2 :: Graph
+g2 = Graph n2 e2 src2 tgt2
+
+-- Restrições de arestas e vértices restE restN
+-- Restrições de arestas: 
+-- do tipo (e1,e2) := aresta e1 no grafo fonte do morfismo mapeia para a aresta e2 no grafo alvo do morfismo
+-- Restrições de vértices:
+-- do tipo (n1,n2) := vértice n1 no grafo fonte do morfismo mapeia para o vértice n2 no grafo alvo do morfismo
+
+type RestE = (Edge,Edge)
+type RestN = (Node,Node)
+
+-- Testa uma restrição de aresta contra uma de vértice
+src_tgt_map :: Graph -> Graph -> RestE -> RestN -> Bool
+src_tgt_map g1 g2 (re1,re2) (rn1,rn2)
+ | s1 && t1 = s2 && t2 
+ | s1 = s2
+ | t1 = t2 
+ | otherwise = True
+ where
+ s1 = source g1 re1 == rn1
+ t1 = target g1 re1 == rn1
+ s2 = source g2 re2 == rn2
+ t2 = target g2 re2 == rn2
+
+-- Testa uma restrição de aresta contra todas as de vértices
+testRestrictE :: Graph -> Graph -> RestE -> [RestN] -> Bool
+testRestrictE g1 g2 rE rN = and $ map (src_tgt_map g1 g2 rE) rN
+
+-- Dada listas de restrições sobre dois grafos,
+-- Retorna se ela é válida.
+-- É válida, se toda aresta e1 mapeada em e2 tem seus
+-- alvo e fonte mapeados nos alvo e fonte de e2, respectivamente
+isRestrictionValid :: Graph -> Graph -> [restN] -> [restE] -> Bool
+isRestrictionValid g1 g2 rN rE = foldl (&&) True $ map (testRestrictInv g1 g2 rN) rE
+ where
+ testRestrictInv a b c d = testRestrictE a b d c
+
+
+
+main :: IO ()
+main = return ()
