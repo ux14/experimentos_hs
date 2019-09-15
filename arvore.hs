@@ -1,6 +1,6 @@
 import Control.Monad.State
 
-data Tree a = EmptyTree | Tree {root :: a, left :: Tree a, right :: Tree a}
+data Tree a = EmptyTree | Tree {root :: a, left :: Tree a, right :: Tree a} deriving (Show,Read)
 
 singleton :: a -> Tree a
 singleton x = Tree x EmptyTree EmptyTree
@@ -27,27 +27,28 @@ listFromTree :: Tree a -> [a]
 listFromTree EmptyTree = []
 listFromTree tree = (root tree) : (listFromTree $ left tree) ++ (listFromTree $ right tree)
 
+numeraArvore :: Tree a -> State Int (Tree (a,Int))
+numeraArvore EmptyTree = return EmptyTree
+numeraArvore (Tree x l r) = do
+                            atual <- get
+                            put (atual+1)
 
-data Turn = R | L deriving (Eq,Ord,Show)
-type Path = [Turn]
-type TreeState a = (Tree a, Path, Int)
+                            lTree <- numeraArvore l
+                            rTree <- numeraArvore r
 
-treeFromPath :: Tree a -> Path -> Tree a
-treeFromPath t [] = t
-treeFromPath t (rol:p) = if (rol == R) then treeFromPath (right t) else treeFromPath (left t)
+                            return (Tree (x,atual) lTree rTree)
 
-numeraRaiz :: State (Tree (a,Int), Int) (Tree (a,Int))
-numeraRaiz = state numRaiz
- where
- numPair (p1,_) n = (p1,n)
- numRaiz (EmptyTree,n) = (EmptyTree, (EmptyTree,n))
- numRaiz (Tree p esq dir, n) = ((Tree (numPair p n) esq dir), ((Tree (numPair p n) esq dir), n+1))
+t1 :: Tree Int
+t1 = Tree 1 EmptyTree EmptyTree
 
-numeraArvore :: State (Tree (a,Int), Int) ()
-numeraArvore = 
- do
-  tree <- numeraRaiz
-  return ()
+t2 :: Tree Int
+t2 = Tree 2 EmptyTree EmptyTree
+
+t3 :: Tree Int
+t3 = Tree 3 EmptyTree EmptyTree
+
+t4 :: Tree Int
+t4 = Tree 4 EmptyTree EmptyTree
 
 main :: IO ()
 main = return ()
