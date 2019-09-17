@@ -45,10 +45,13 @@ t2 :: Tree Int
 t2 = Tree 2 EmptyTree EmptyTree
 
 t3 :: Tree Int
-t3 = Tree 3 EmptyTree EmptyTree
+t3 = Tree 3 t1 t2
 
 t4 :: Tree Int
-t4 = Tree 4 EmptyTree EmptyTree
+t4 = Tree 4 t2 EmptyTree
+
+t5 :: Tree Int
+t5 = Tree 5 t4 t3
 
 main :: IO ()
 main = return ()

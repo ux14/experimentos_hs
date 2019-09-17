@@ -1,3 +1,5 @@
+import Data.List
+
 type Node  = Int
 type Edge  = Int
 type Path = [Edge]
@@ -82,7 +84,7 @@ data GraphMorphism = GraphMorphism { src :: Graph
                                     ,fe  :: Edge -> Edge}
 
 instance Show GraphMorphism where
-    show (GraphMorphism g1 g2 n e) = (show g1) ++ (show g2) ++ ( show $ zipWith (,) (nodes g1) (map n $ nodes g1) ) ++ "\n" ++ ( show $ zipWith (,) (edges g1) (map e $ edges g1) )
+    show (GraphMorphism g1 g2 n e) = (show g1) ++ (show g2) ++ ( show $ zipWith (,) (nodes g1) (map n $ nodes g1) ) ++ "\n" ++ ( show $ zipWith (,) (edges g1) (map e $ edges g1) ) ++ "\n"
 
 isHomomorphism :: GraphMorphism -> Bool
 isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (commutes ( (fv gm) . target1) (target2 . (fe gm) ) e1)
@@ -91,11 +93,6 @@ isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (
  (g1,g2) = (src gm, tgt gm)
  (e1,source1,target1) = (edges g1, source g1, target g1)
  (e2,source2,target2) = (edges g2, source g2, target g2)
-
--- find
-find :: (a -> Bool) -> [a] -> Maybe a
-find _ [] = Nothing
-find f (xi:x) = if (f xi) then (Just xi) else (find f x)
 
 -- Função a partir de uma lista associativa.
 assocListToFunc :: (Eq a) => [(a,b)] -> (a -> b)
@@ -208,25 +205,65 @@ src_tgt_map g1 g2 (re1,re2) (rn1,rn2)
 testRestrictE :: Graph -> Graph -> RestE -> [RestN] -> Bool
 testRestrictE g1 g2 rE rN = and $ map (src_tgt_map g1 g2 rE) rN
 
+testRestrictN :: Graph -> Graph -> [RestN] -> RestN -> Bool
+testRestrictN g1 g2 rN (n1,n2) = (== []) $ filter (\(p1,p2) -> p1 == n1 && p2 /= n2) rN
+
 -- Dada listas de restrições sobre dois grafos,
 -- Retorna se ela é válida.
 -- É válida, se toda aresta e1 mapeada em e2 tem seus
 -- alvo e fonte mapeados nos alvo e fonte de e2, respectivamente
-isRestrictionValid :: Graph -> Graph -> [restN] -> [restE] -> Bool
-isRestrictionValid g1 g2 rN rE = foldl (&&) True $ map (testRestrictInv g1 g2 rN) rE
+isRestrictionValid :: Graph -> Graph -> ([RestN],[RestE]) -> Bool
+isRestrictionValid g1 g2 (rN,rE) = (and $ map (testRestrictN g1 g2 rN) rN) && (and $ map (testRestrictInv g1 g2 rN) rE)
  where
  testRestrictInv g g' rn re = testRestrictE g g' re rn
 
-allValidRestList :: Graph -> Graph -> [restN] -> [restE] -> [([restN],[restE])]
-allValidRestList g1 g2 rN rE =  let
-                                    ei = head $ edges g1
-                                    s1 = source g1
-                                    s2 = source g2
-                                    t1 = target g1
-                                    t2 = target g2
-                                in
-                                do
-                                e2 <- (edges g2)
-                                ((ei,e2):rE) ((s1 ei,s2 e2):(t1 ei, t2 e2):rN)                                                      
+allValidRestList :: Graph -> Graph -> ([RestN],[RestE]) -> [([RestN],[RestE])]
+
+allValidRestList (Graph _ [] _ _) g2 rNE = return rNE
+
+allValidRestList g1 g2 (rN,rE) =  let
+                                      n = nodes g1
+                                      e = tail $ edges g1
+                                      ei = head $ edges g1
+                                      s1 = source g1
+                                      s2 = source g2
+                                      t1 = target g1
+                                      t2 = target g2
+                                  in
+                                  
+                                  do    
+                                      e2 <- (edges g2)
+                                      
+                                      let
+                                          newRE = nub $ (ei,e2):rE
+                                          newRN = nub $ (s1 ei,s2 e2):(t1 ei, t2 e2):rN
+                                          in 
+
+                                          if isRestrictionValid g1 g2 (newRN, newRE)
+                                          then allValidRestList (Graph n e s1 t1) g2 (newRN, newRE)
+                                          else []
+
+diff :: (Eq a) => [a] -> [a] -> [a]
+diff x [] = x
+diff x l = diff (delete (head l) x) (tail l)
+
+completeRestList :: Graph -> Graph -> ([RestN],[RestE]) -> [([RestN],[RestE])]
+completeRestList g1 g2 (rN,rE) = let 
+                                     remainingN = diff (nodes g1) (map fst rN)
+                                 in
+                                 if remainingN == []
+                                     then return (rN,rE)
+                                     else
+                                         do
+                                         n1 <- diff (nodes g1) (map fst rN)
+                                         n2 <- (nodes g2)
+                                         completeRestList g1 g2 ((n1,n2):rN, rE)
+
+allHomomorphisms2 :: Graph -> Graph -> [GraphMorphism]
+allHomomorphisms2 g1 g2 = map (toMorphism g1 g2) restrics
+ where
+  toMorphism g1 g2 (rN,rE) = GraphMorphism g1 g2 (assocListToFunc rN) (assocListToFunc rE)
+  restrics = concatMap (completeRestList g1 g2) $ allValidRestList g1 g2 ([],[])
+
 main :: IO ()
 main = return ()
