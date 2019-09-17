@@ -200,8 +200,8 @@ src_tgt_map g1 g2 (re1,re2) (rn1,rn2)
  | otherwise = True
  where
  s1 = source g1 re1 == rn1
- t1 = target g1 re1 == rn1
  s2 = source g2 re2 == rn2
+ t1 = target g1 re1 == rn1
  t2 = target g2 re2 == rn2
 
 -- Testa uma restrição de aresta contra todas as de vértices
@@ -215,9 +215,18 @@ testRestrictE g1 g2 rE rN = and $ map (src_tgt_map g1 g2 rE) rN
 isRestrictionValid :: Graph -> Graph -> [restN] -> [restE] -> Bool
 isRestrictionValid g1 g2 rN rE = foldl (&&) True $ map (testRestrictInv g1 g2 rN) rE
  where
- testRestrictInv a b c d = testRestrictE a b d c
+ testRestrictInv g g' rn re = testRestrictE g g' re rn
 
-
-
+allValidRestList :: Graph -> Graph -> [restN] -> [restE] -> [([restN],[restE])]
+allValidRestList g1 g2 rN rE =  let
+                                    ei = head $ edges g1
+                                    s1 = source g1
+                                    s2 = source g2
+                                    t1 = target g1
+                                    t2 = target g2
+                                in
+                                do
+                                e2 <- (edges g2)
+                                ((ei,e2):rE) ((s1 ei,s2 e2):(t1 ei, t2 e2):rN)                                                      
 main :: IO ()
 main = return ()
