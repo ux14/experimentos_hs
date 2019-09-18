@@ -86,6 +86,9 @@ data GraphMorphism = GraphMorphism { src :: Graph
 instance Show GraphMorphism where
     show (GraphMorphism g1 g2 n e) = (show g1) ++ (show g2) ++ ( show $ zipWith (,) (nodes g1) (map n $ nodes g1) ) ++ "\n" ++ ( show $ zipWith (,) (edges g1) (map e $ edges g1) ) ++ "\n"
 
+instance Eq GraphMorphism where
+    (==) g1 g2 = (show g1) == (show g2)
+
 isHomomorphism :: GraphMorphism -> Bool
 isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (commutes ( (fv gm) . target1) (target2 . (fe gm) ) e1)
  where
@@ -96,7 +99,7 @@ isHomomorphism gm = (commutes ( (fv gm) . source1) (source2 . (fe gm) ) e1) && (
 
 -- Função a partir de uma lista associativa.
 assocListToFunc :: (Eq a) => [(a,b)] -> (a -> b)
-assocListToFunc l a = let Just pair = find (\p -> fst p == a) l
+assocListToFunc l a = let Just pair = find ((== a) . fst) l
                         in 
                         snd pair
 
@@ -107,32 +110,40 @@ assocListToFunc l a = let Just pair = find (\p -> fst p == a) l
 --
 -- Exemplo: genAllListsFromSet [1,2] = [ [1,1], [1,2], [2,1], [2,2] ]
 --
-genAllListsFromSet :: [a] -> [[a]]
+genAllListsFromSet :: (Eq a) => [a] -> [[a]]
 genAllListsFromSet l = all n
  where
- n = length l
- listOfLists n = take n $ map (\x -> l) (repeat n)
+ n = length $ nub l
+ listOfLists n = take n $ map (\x -> nub l) (repeat n)
  all n = foldl (\x y -> (\z w -> z:w) <$> y <*> x) ([[]]) (listOfLists n)
+
+genAllListsFromSet2 :: (Eq a) => Int -> [a] -> [[a]]
+genAllListsFromSet2 n l = sequence (replicate n l')
+ where
+ l' = nub l
 
 -- Gera uma lista associativa a partir de duas
 -- listas.
 genAssocList :: [a] -> [b] -> [(a,b)]
-genAssocList = zipWith (\f s -> (f,s))
+genAssocList = zipWith (,)
 
-genAllAssocList :: [a] -> [b] -> [[(a,b)]]
-genAllAssocList a b = map (genAssocList a) (genAllListsFromSet b)
+genAllAssocList :: (Eq b) => [a] -> [b] -> [[(a,b)]]
+genAllAssocList a b = map (genAssocList a) (genAllListsFromSet2 (length a) b)
 
 -- Lista de todas as funções entre dois 'conjuntos' (representados por listas)
 -- Cuidado que passar um valor que não está na primeira lista gera erro.
-allFuncs :: (Eq a) => [a] -> [b] -> [a -> b]
+allFuncs :: (Eq a, Eq b) => [a] -> [b] -> [a -> b]
 allFuncs a b = map assocListToFunc (genAllAssocList a b)
 
 -- Lista com todos os morfismos entre dois grafos
 allMorphisms :: Graph -> Graph -> [GraphMorphism]
-allMorphisms g1 g2 = (GraphMorphism g1 g2) <$> (allFuncs n1 n2) <*> (allFuncs e1 e2)
-    where
-    (n1,n2) = (nodes g1, nodes g2)
-    (e1,e2) = (edges g1, edges g2)
+allMorphisms g1 g2 = do
+                         fv1 <- allFuncs n1 n2
+                         fe1 <- allFuncs e1 e2
+                         return (GraphMorphism g1 g2 fv1 fe1)
+ where
+ (n1,n2) = (nodes g1, nodes g2)
+ (e1,e2) = (edges g1, edges g2)
     
 allHomomorphisms :: Graph -> Graph -> [GraphMorphism]
 allHomomorphisms g1 g2 = filter isHomomorphism (allMorphisms g1 g2) 
@@ -179,6 +190,14 @@ e2 = [1,2,3]
 g2 :: Graph
 g2 = Graph n2 e2 src2 tgt2
 
+completeGraph :: Int -> Graph
+completeGraph 0 = Graph [] [] id id
+completeGraph n = Graph [0..n-1] (completeEdges n) (completeSrc n) (completeTgt n)
+ where
+ completeEdges n = [0..n*n-1]
+ completeSrc n e = snd . head . filter ( (== e) . fst ) $ zipWith (,) (completeEdges n) $ map (\e -> div e n) (completeEdges n)
+ completeTgt n e = snd . head . filter ( (== e) . fst ) $ zipWith (,) (completeEdges n) $ map (\e -> mod e n) (completeEdges n)
+
 -- Restrições de arestas e vértices restE restN
 -- Restrições de arestas: 
 -- do tipo (e1,e2) := aresta e1 no grafo fonte do morfismo mapeia para a aresta e2 no grafo alvo do morfismo
@@ -223,8 +242,7 @@ allValidRestList (Graph _ [] _ _) g2 rNE = return rNE
 
 allValidRestList g1 g2 (rN,rE) =  let
                                       n = nodes g1
-                                      e = tail $ edges g1
-                                      ei = head $ edges g1
+                                      ei:e = edges g1
                                       s1 = source g1
                                       s2 = source g2
                                       t1 = target g1
