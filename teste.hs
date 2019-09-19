@@ -117,6 +117,7 @@ genAllListsFromSet l = all n
  listOfLists n = take n $ map (\x -> nub l) (repeat n)
  all n = foldl (\x y -> (\z w -> z:w) <$> y <*> x) ([[]]) (listOfLists n)
 
+--
 genAllListsFromSet2 :: (Eq a) => Int -> [a] -> [[a]]
 genAllListsFromSet2 n l = sequence (replicate n l')
  where
@@ -283,5 +284,10 @@ allHomomorphisms2 g1 g2 = map (toMorphism g1 g2) restrics
   toMorphism g1 g2 (rN,rE) = GraphMorphism g1 g2 (assocListToFunc rN) (assocListToFunc rE)
   restrics = concatMap (completeRestList g1 g2) $ allValidRestList g1 g2 ([],[])
 
+-- src m1 == tgt m2
+compositionMorphism :: GraphMorphism -> GraphMorphism -> GraphMorphism
+compositionMorphism m1 m2 = GraphMorphism (src m2) (tgt m1) (fv m1 . fv m2) (fe m1 . fe m2)
+
 main :: IO ()
-main = return ()
+main = do
+       putStrLn $ show $ take 20 $ allHomomorphisms2 (completeGraph 3) (completeGraph 4)
