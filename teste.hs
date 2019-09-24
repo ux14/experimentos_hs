@@ -1,4 +1,5 @@
 import Data.List
+import Control.Monad
 
 type Node  = Int
 type Edge  = Int
@@ -288,6 +289,36 @@ allHomomorphisms2 g1 g2 = map (toMorphism g1 g2) restrics
 compositionMorphism :: GraphMorphism -> GraphMorphism -> GraphMorphism
 compositionMorphism m1 m2 = GraphMorphism (src m2) (tgt m1) (fv m1 . fv m2) (fe m1 . fe m2)
 
+splitOn :: (Eq a) => a -> [a] -> ([a],[a])
+splitOn _ [] = ([],[])
+splitOn c (f:rest) = if c == f then ([],rest)
+                               else ( f:(fst $ splitOn c rest), (snd $ splitOn c rest))
+
+getGraph :: IO Graph
+getGraph = do
+    nodeLine <- getLine
+    edgeLine <- getLine
+    let nodeNum = (read nodeLine) :: Int
+    let edgeNum = (read edgeLine) :: Int
+
+    srcEdge <- forM [1..edgeNum] (\_ -> do
+        edge_src <- getLine
+        let (e,s) = splitOn ',' $ map (\c -> if (c == '(' || c == ')') then ' ' else c) edge_src
+        return ( read e :: Int, read s :: Int))
+
+    tgtEdge <- forM [1..edgeNum] (\_ -> do
+        edge_tgt <- getLine
+        let (e,t) = splitOn ',' $ map (\c -> if (c == '(' || c == ')') then ' ' else c) edge_tgt
+        return ( read e :: Int, read t :: Int))
+
+    return $ Graph [1..nodeNum] [1..edgeNum] (assocListToFunc srcEdge) (assocListToFunc tgtEdge)
+
+
 main :: IO ()
 main = do
-       putStrLn $ show $ take 20 $ allHomomorphisms2 (completeGraph 3) (completeGraph 4)
+--	numGraphLine <- getLine
+--	let numGraph = (read numGraphLine) :: Int
+    g1 <- getGraph
+    g2 <- getGraph
+    let k2 = completeGraph 2
+    putStr $ show (allHomomorphisms g1 g2)
