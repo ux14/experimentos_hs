@@ -294,7 +294,7 @@ splitOn _ [] = ([],[])
 splitOn c (f:rest) = if c == f then ([],rest)
                                else ( f:(fst $ splitOn c rest), (snd $ splitOn c rest))
 
-getGraph :: IO Graph
+getGraph :: IO Graph --([(Int,Int)],[(Int,Int)])
 getGraph = do
     nodeLine <- getLine
     edgeLine <- getLine
@@ -311,6 +311,7 @@ getGraph = do
         let (e,t) = splitOn ',' $ map (\c -> if (c == '(' || c == ')') then ' ' else c) edge_tgt
         return ( read e :: Int, read t :: Int))
 
+    --return $ (srcEdge,tgtEdge) 
     return $ Graph [1..nodeNum] [1..edgeNum] (assocListToFunc srcEdge) (assocListToFunc tgtEdge)
 
 
@@ -320,5 +321,7 @@ main = do
 --	let numGraph = (read numGraphLine) :: Int
     g1 <- getGraph
     g2 <- getGraph
-    let k2 = completeGraph 2
-    putStr $ show (allHomomorphisms g1 g2)
+    --let k2 = completeGraph 2
+    --(s,t) <- getGraph 
+    --putStr $ show s ++ show t
+    putStr $ show (allHomomorphisms g1 g2 )
